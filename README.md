@@ -1,8 +1,8 @@
 # RealFill: Personalized Text-to-Image Inpainting
 
-**APAI3010 Course Project**
+**APAI3010 Course Project (Group 11)**
 
-This repository is an unofficial RealFill implementation based on the paper [RealFill: Reference-Driven Generation for Authentic Image Completion](https://arxiv.org/abs/2309.16668) and the base project [thuanz123/realfill](https://github.com/thuanz123/realfill).
+This repository is an unofficial RealFill implementation based on the paper [RealFill: Reference-Driven Generation for Authentic Image Completion](https://arxiv.org/abs/2309.16668) and the base project [thuanz123/realfill](https://github.com/thuanz123/realfill)
 
 The main Colab walkthrough is in [3010_project_cleared_colab.ipynb](./3010_project_cleared_colab.ipynb). It covers setup, training, inference, visualization, and export.
 
@@ -12,7 +12,7 @@ The main Colab walkthrough is in [3010_project_cleared_colab.ipynb](./3010_proje
 
 RealFill personalizes a Stable Diffusion inpainting model using only 1–5 reference images of a scene. The notebook fine-tunes LoRA weights on both the UNet and the text encoder using `diffusers` + `peft`.
 
-The notebook is configured for Google Colab, but the same scripts also run locally if you have a CUDA GPU.
+The notebook is configured for Google Colab (GPU T4), but the same scripts also run locally if you have a CUDA GPU. Change the directory if you want to run locally.
 
 ---
 
@@ -51,7 +51,7 @@ You also need a Hugging Face token with access to `stabilityai/stable-diffusion-
 
 ## Training
 
-The notebook trains with these key settings:
+The notebook trains with these key settings (same as default):
 
 - base model: `sd2-community/stable-diffusion-2-inpainting`
 - image resolution: `512`
