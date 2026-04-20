@@ -1,12 +1,4 @@
-
-# Ignore model and large data outputs
+# Ignore model and zips
 *-model/
-test-infer/
-data/
 *.zip
-
-# Ignore model and large data outputs
-*-model/
 test-infer/
-data/
-*.zip
