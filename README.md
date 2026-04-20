@@ -4,7 +4,7 @@
 
 This repository is an unofficial RealFill implementation based on the paper [RealFill: Reference-Driven Generation for Authentic Image Completion](https://arxiv.org/abs/2309.16668) and the base project [thuanz123/realfill](https://github.com/thuanz123/realfill)
 
-The main Colab walkthrough is in [3010_project_cleared_colab.ipynb](./3010_project_cleared_colab.ipynb). It covers setup, training, inference, visualization, and export.
+The main Colab walkthrough is in [3010_project.ipynb](./3010_project_cleared_colab.ipynb). It covers setup, training, inference, visualization, and export.
 
 ---
 
