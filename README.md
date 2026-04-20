@@ -1,118 +1,128 @@
-# RealFill
+# RealFill: Personalized Text-to-Image Inpainting
 
-[RealFill](https://arxiv.org/abs/2309.16668) is a method to personalize text2image inpainting models like stable diffusion inpainting given just a few (1~5) images of a scene.
-The `train_realfill.py` script shows how to implement the training procedure for stable diffusion inpainting.
+**APAI3010 Course Project**
 
+This repository is an unofficial RealFill implementation based on the paper [RealFill: Reference-Driven Generation for Authentic Image Completion](https://arxiv.org/abs/2309.16668) and the base project [thuanz123/realfill](https://github.com/thuanz123/realfill).
 
-## Running locally with PyTorch
+The main Colab walkthrough is in [3010_project_cleared_colab.ipynb](./3010_project_cleared_colab.ipynb). It covers setup, training, inference, visualization, and export.
 
-### Installing the dependencies
+---
 
-Before running the scripts, make sure to install the library's training dependencies:
+## What This Project Does
 
-cd to the realfill folder and run
-```bash
-cd realfill
-pip install -r requirements.txt
+RealFill personalizes a Stable Diffusion inpainting model using only 1–5 reference images of a scene. The notebook fine-tunes LoRA weights on both the UNet and the text encoder using `diffusers` + `peft`.
+
+The notebook is configured for Google Colab, but the same scripts also run locally if you have a CUDA GPU.
+
+---
+
+## Repository Structure
+
+```sh
+├── 3010_project_cleared_colab.ipynb   # Main Colab notebook
+├── train_realfill.py                  # Training script
+├── infer.py                           # Inference script
+├── data/                              # Scene folders: ref/ + target/
+├── requirements.txt                   # Core dependencies
+└── README.md
 ```
 
-And initialize an [🤗Accelerate](https://github.com/huggingface/accelerate/) environment with:
+## Notebook Workflow
+
+The notebook follows this sequence:
+
+1. Clone the repo and install dependencies
+2. Configure `accelerate`
+3. Train RealFill with LoRA on `data/<scene>/`
+4. Run inference on `target.png` + `mask.png`
+5. Visualize the 16 generated outputs
+6. Zip and download the results
+
+## Setup
+
+In Colab, the notebook installs the required packages directly. For a local setup, use the same core dependencies shown in the notebook:
 
 ```bash
-accelerate config
+pip install diffusers accelerate transformers peft huggingface-hub torch torchvision ftfy tensorboard Jinja2 bitsandbytes xformers kornia
+pip install matplotlib
 ```
 
-Or for a default accelerate configuration without answering questions about your environment
+You also need a Hugging Face token with access to `stabilityai/stable-diffusion-2-inpainting`.
+
+## Training
+
+The notebook trains with these key settings:
+
+- base model: `sd2-community/stable-diffusion-2-inpainting`
+- image resolution: `512`
+- batch size: `16`
+- max steps: `2000`
+- LoRA rank / dropout / alpha: `8 / 0.1 / 16`
+- mixed precision: `fp16`
+- optimizations: gradient checkpointing, 8-bit Adam, xFormers, `set_grads_to_none`
+
+Example command:
 
 ```bash
-accelerate config default
-```
-
-Or if your environment doesn't support an interactive shell e.g. a notebook
-
-```python
-from accelerate.utils import write_basic_config
-write_basic_config()
-```
-
-When running `accelerate config`, if we specify torch compile mode to True there can be dramatic speedups. 
-
-### Toy example
-
-Now let's fill the real. For this example, we will use some images of the flower girl example from the paper.
-
-We already provide some images for testing in data folder
-
-You only have to launch the training using:
-
-```bash
-export MODEL_NAME="stabilityai/stable-diffusion-2-inpainting"
-export TRAIN_DIR="data/flowerwoman"
-export OUTPUT_DIR="flowerwoman-model"
-
 accelerate launch train_realfill.py \
-  --pretrained_model_name_or_path=$MODEL_NAME \
-  --train_data_dir=$TRAIN_DIR \
-  --output_dir=$OUTPUT_DIR \
-  --resolution=512 \
-  --train_batch_size=16 \
-  --gradient_accumulation_steps=1 \
-  --unet_learning_rate=2e-4 \
-  --text_encoder_learning_rate=4e-5 \
-  --lr_scheduler="constant" \
-  --lr_warmup_steps=100 \
-  --max_train_steps=2000 \
-  --lora_rank=8 \
-  --lora_dropout=0.1 \
-  --lora_alpha=16 \
-```
-
-### Training on a low-memory GPU:
-
-It is possible to run realfill on a low-memory GPU by using the following optimizations:
-- [gradient checkpointing and the 8-bit optimizer](#training-with-gradient-checkpointing-and-8-bit-optimizers)
-- [xformers](#training-with-xformers)
-- [setting grads to none](#set-grads-to-none)
-
-```bash
-export MODEL_NAME="stabilityai/stable-diffusion-2-inpainting"
-export TRAIN_DIR="data/flowerwoman"
-export OUTPUT_DIR="flowerwoman-model"
-
-accelerate launch train_realfill.py \
-  --pretrained_model_name_or_path=$MODEL_NAME \
-  --train_data_dir=$TRAIN_DIR \
-  --output_dir=$OUTPUT_DIR \
-  --resolution=512 \
-  --train_batch_size=16 \
-  --gradient_accumulation_steps=1 --gradient_checkpointing \
+  --pretrained_model_name_or_path sd2-community/stable-diffusion-2-inpainting \
+  --train_data_dir data/20 \
+  --output_dir 20-model \
+  --resolution 512 \
+  --train_batch_size 16 \
+  --gradient_accumulation_steps 1 \
+  --gradient_checkpointing \
   --use_8bit_adam \
-  --enable_xformers_memory_efficient_attention \
   --set_grads_to_none \
-  --unet_learning_rate=2e-4 \
-  --text_encoder_learning_rate=4e-5 \
-  --lr_scheduler="constant" \
-  --lr_warmup_steps=100 \
-  --max_train_steps=2000 \
-  --lora_rank=8 \
-  --lora_dropout=0.1 \
-  --lora_alpha=16 \
+  --mixed_precision fp16 \
+  --unet_learning_rate 2e-4 \
+  --text_encoder_learning_rate 4e-5 \
+  --lr_scheduler constant \
+  --lr_warmup_steps 100 \
+  --max_train_steps 2000 \
+  --lora_rank 8 \
+  --lora_dropout 0.1 \
+  --lora_alpha 16 \
+  --resume_from_checkpoint latest \
+  --allow_tf32 \
+  --enable_xformers_memory_efficient_attention
 ```
 
-### Training with gradient checkpointing and 8-bit optimizers:
+## Inference
 
-With the help of gradient checkpointing and the 8-bit optimizer from bitsandbytes it's possible to run train realfill on a 16GB GPU.
+The notebook runs inference with `infer.py` and saves 16 outputs:
 
-To install `bitsandbytes` please refer to this [readme](https://github.com/TimDettmers/bitsandbytes#requirements--installation).
+```bash
+python infer.py \
+  --model_path 20-model \
+  --validation_image data/20/target/target.png \
+  --validation_mask data/20/target/mask.png \
+  --output_dir ./test-infer/ \
+  --seed 40
+```
 
-### Training with xformers:
-You can enable memory efficient attention by [installing xFormers](https://github.com/facebookresearch/xformers#installing-xformers) and padding the `--enable_xformers_memory_efficient_attention` argument to the script.
+`infer.py` loads the base inpainting pipeline, swaps in the trained UNet and text encoder weights, applies the mask, and writes `0.png` to `15.png` into `test-infer/`.
 
-### Set grads to none
+## Data Format
 
-To save even more memory, pass the `--set_grads_to_none` argument to the script. This will set grads to None instead of zero. However, be aware that it changes certain behaviors, so if you start experiencing any problems, remove this argument.
+```text
+data/<scene>/
+├── ref/               # 1–5 reference photos
+└── target/
+    ├── target.png     # image with the missing region
+    └── mask.png       # white = area to inpaint
+```
 
-More info: https://pytorch.org/docs/stable/generated/torch.optim.Optimizer.zero_grad.html
+## Output
 
-## Acknowledge
-This repo is built upon the code of DreamBooth from diffusers and we thank the developers for their great works and efforts to release source code. Furthermore, a special "thank you" to RealFill's authors for publishing such an amazing work.
+After inference, the notebook:
+
+- shows the 16 generated images in a 4×4 grid
+- saves the outputs in `test-infer/`
+- zips the folder for download
+
+## Acknowledgements
+
+- Original RealFill paper: Tang et al. (SIGGRAPH 2024)
+- Base implementation: [thuanz123/realfill](https://github.com/thuanz123/realfill)
+- Libraries: PyTorch, Diffusers, Transformers, PEFT, bitsandbytes, xFormers, Accelerate
