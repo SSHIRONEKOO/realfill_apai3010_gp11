@@ -2,7 +2,7 @@
 
 **APAI3010 Course Project (Group 11)**
 
-This repository is an unofficial RealFill implementation based on the paper [RealFill: Reference-Driven Generation for Authentic Image Completion](https://arxiv.org/abs/2309.16668) and the base project [thuanz123/realfill](https://github.com/thuanz123/realfill)
+This repository is an unofficial RealFill implementation based on the paper [RealFill: Reference-Driven Generation for Authentic Image Completion](https://arxiv.org/abs/2309.16668) and the base project from [thuanz123/realfill](https://github.com/thuanz123/realfill).
 
 The main Colab walkthrough is in [3010_project.ipynb](./3010_project_cleared_colab.ipynb). It covers setup, training, inference, visualization, and export.
 
@@ -13,6 +13,24 @@ The main Colab walkthrough is in [3010_project.ipynb](./3010_project_cleared_col
 RealFill personalizes a Stable Diffusion inpainting model using only 1–5 reference images of a scene. The notebook fine-tunes LoRA weights on both the UNet and the text encoder using `diffusers` + `peft`.
 
 The notebook is configured for Google Colab (GPU T4), but the same scripts also run locally if you have a CUDA GPU. Change the directory if you want to run locally.
+
+---
+
+## DepthFill Implementation Details
+
+The **DepthFill** module enhances the RealFill pipeline by augmenting reference data with depth-based synthetic views, making the model more robust to perspective and angle changes.
+
+**The approach comprises two main steps:**
+
+1. **Depth Estimation**  
+   We utilize a monocular depth estimation model (such as MiDaS, as used in our implementation) to extract dense 3D depth priors from a single 2D reference image.
+
+2. **Synthetic View Generation**  
+   Using the estimated depth map, we apply depth-based geometric warping and spatial cropping to create pseudo-multi-view reference images. This simulates rendering the scene from different camera perspectives.  
+   Unlike traditional image augmentation such as rotation, flipping, stretching, or random cropping, this process produces synthetic images that are physically plausible and exhibit geometric consistency with the original scene due to their foundation in underlying 3D structure.
+
+Finally, both the original and depth-based synthetic images are fed together into RealFill during training.  
+This technique expands the set of perspectives seen by the model, enabling it to better learn about and handle perspective changes—thereby improving the robustness of inpainting results to different viewing angles.
 
 ---
 
